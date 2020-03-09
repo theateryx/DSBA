@@ -1,3 +1,3 @@
 # Market Basket Analysis
 
-Side projects for work
+Menu and transaction analysis
