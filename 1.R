@@ -26,10 +26,7 @@ data1
 cols <- c("Date","Transaction","CategoryID","Category", "ClassID","Class", "ID","Menu","Day")
 sun <-data1 %>% mutate_at(cols, factor)
 head(sun)
-
-write.xlsx(sun, file = "sun.xlsx",
-           sheetName="clean", append=TRUE)
-
+sun$Day <- as.factor(sun$Day)
 summary(sun)
 
 # split txn
