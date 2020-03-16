@@ -1,0 +1,206 @@
+---
+title: "Untitled"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+setwd("C:/Users/Ping/Documents/GitHub/dsba")
+library(lubridate)
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(arulesViz)
+library(arules)
+library(lattice)
+library(DataExplorer)
+```
+
+```{r }
+data <- read_xlsx("allmenu.xlsx")
+nrow(data)
+str(data)
+summary(data)
+
+```
+
+```{r}
+
+data$Date <- ymd(data$Date)
+data$Day <- wday(data$Date, label = T)
+head(data)
+
+new_vars <- c("Date","Transaction","Row", "Category", "Class", "Code","Menu","Qty","Price","Cost","Day")
+colnames(data) <- new_vars
+summary(data)
+
+# arrange columns
+colnames(data)
+data <- data[, c(1,11,2,3,4,5,6,7,8,9,10)]
+summary(data)
+
+# Set factors
+cols <- c("Date","Transaction","Category", "Class","Menu")
+data <- data %>% mutate_at(cols, factor)
+head(data)
+
+quantile(data$Price,c(0.01,0.02,0.03,0.1,0.2,0.3,0.4,0.50,0.6,0.7,0.8,0.9,0.95,0.99,1)) # significant difference in 0% and 1% 
+
+#filter data for rules
+data <- as_tibble(data)
+transdata <- select(data, Transaction, Menu)
+classdata <- select(data, Transaction, Class)
+catdata <- select(data, Transaction, Category)
+
+```
+
+
+```{r EDA}
+
+attach(data)
+plot(Date)
+plot(Day)
+plot(Transaction)
+plot(Category)
+plot(ID)
+plot(Menu)
+plot(Qty)
+boxplot(Price)
+qplot(Cost)
+plot_histogram(data, title ="Univariate Analysis for Continuous Data")
+plot_bar(data, title ="Univariate Analysis for Factored Data")
+
+ggplot(data = data) + 
+  geom_bar(mapping = aes(x = Category, fill = Day), position = "dodge")
+
+ggplot(data = data) + 
+  geom_bar(mapping = aes(x = Transaction, fill = Day), position = "dodge")
+
+```
+
+
+```{r}
+Agg.RTxn <- split(data$Menu ,data$Transaction)
+class(Agg.RTxn)
+
+## To see specific row number transaction
+Agg.RTxn [35]
+
+```
+
+```{r}
+
+## logic to remove duplicate items from the list
+Agg.RTxn_DD <- list()
+for (i in 1:length(Agg.RTxn)) {
+  Agg.RTxn_DD[[i]] <- as.character(Agg.RTxn[[i]][!duplicated(Agg.RTxn[[i]])])
+}
+## converting transaction items from list format to transaction format
+Txns <- as(Agg.RTxn_DD, "transactions")
+
+summary(Txns)
+inspect(Txns[1:5])
+
+freq <- itemFrequency(Txns)
+freq <- freq[order(-freq)]
+freq["Green Tea"]
+qplot(freq)
+
+barplot(freq[1:10], horiz = TRUE, axisnames = TRUE, las=1, cex.names=0.5)
+
+````
+
+```{r}
+itemFrequencyPlot(Txns, support = 0.1)
+itemFrequencyPlot(Txns, topN = 10)
+
+library("arulesViz")
+
+?apriori
+
+arules1 <- apriori(data = Txns, parameter=list(supp= 0.3, conf = 0.5, minlen = 2))
+summary(arules1)
+inspect(sort(arules1,by="support"))
+
+arules2 <- apriori(data = Txns, parameter = list(support = 0.3, confidence = 0.5, minlen = 2))
+inspect(sort(arules2,by="confidence"))
+
+
+````
+
+```{r}
+library(RColorBrewer)
+
+plot ( arules2,control=list(
+  col = brewer.pal(11,"Spectral")
+),
+main="Association Rules Plot"
+)
+
+subrules2 <- head(sort(arules2, by="support"), 10)
+plot(subrules2, method = "graph" )
+
+subrules2 <- head(sort(arules2, by="confidence"), 20)
+plot(subrules2, method = "graph" )
+````
+
+```{r}
+
+rules_df <- as(arules2,"data.frame")
+rules_df$lhs_support <- rules_df$support/ rules_df$confidence;
+rules_df$rhs_support <- rules_df$confidence / rules_df$lift;
+View(rules_df)
+
+### support items: get rules that lead to buying 'SUN Tofu Cheesecake'
+
+rules.tofu <- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="rhs",lhs="SUN Tofu Cheesecake"), 
+                       control = list (verbose=F)) 
+
+rules.tofu1 <- head(sort(rules.tofu, by="support"), 10)
+plot(rules.tofu1, method = "graph")
+
+### support items: get rules that lead to buying 'Eihire Aburi'
+
+rules.eihire <- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="rhs",lhs="Eihire Aburi"), 
+                       control = list (verbose=F)) 
+
+rules.eihire1 <- head(sort(rules.eihire, by="support"), 10)
+plot(rules.eihire1, method = "graph")
+
+### support items: get rules that lead to buying 'Edamame'
+
+rules.edamame <- apriori (data=Agg.RTxn_DD, 
+                         parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                         appearance = list (default="rhs",lhs="Edamame"), 
+                         control = list (verbose=F)) 
+
+rules.edamame1 <- head(sort(rules.edamame, by="support"), 10)
+plot(rules.edamame1, method = "graph")
+
+### support items: get rules that lead to buying 'Premium Malts 380ml'
+
+rules.beer <- apriori (data=Agg.RTxn_DD, 
+                          parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                          appearance = list (default="rhs",lhs="Premium Malts 380ml"), 
+                          control = list (verbose=F)) 
+
+rules.beer1 <- head(sort(rules.beer, by="support"), 10)
+plot(rules.beer1, method = "graph")
+
+### support items: get rules that lead to buying 'Hamachi Kama Yaki'
+
+rules.hama <- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="rhs",lhs="Hamachi Kama Yaki"), 
+                       control = list (verbose=F)) 
+
+rules.hama1 <- head(sort(rules.hama, by="support"), 10)
+plot(rules.hama1, method = "graph")
+
+
+````
