@@ -1,12 +1,11 @@
 ---
-title: "Untitled"
+title: "Basket Analysis"
 output:
   word_document: default
-  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-setwd("C:/Users/Ping/Documents/GitHub/dsba")
+setwd("C:/Users/suping/Desktop/New folder/dsba-master (3)/dsba-master")
 library(lubridate)
 library(tidyverse)
 library(readxl)
@@ -50,6 +49,7 @@ head(data)
 data <- as_tibble(data)
 transdata <- select(data, Transaction, Menu)
 
+### can filter to do EDA later
 
 ```
 
@@ -106,7 +106,7 @@ qplot(freq)
 
 barplot(freq[1:10], horiz = TRUE, axisnames = TRUE, las=1, cex.names=0.5)
 
-````
+```
 
 ```{r }
 
@@ -123,8 +123,7 @@ arules2 <- apriori(data = Txns, parameter = list(support = 0.01, confidence = 0.
 summary(arules2)
 inspect(sort(arules2,by="confidence"))
 
-
-````
+```
 
 ```{r}
 
@@ -219,6 +218,92 @@ rules.kaisenkm <- apriori (data=Agg.RTxn_DD,
 rules.kaisenkm <- head(sort(rules.kaisenkm, by="confidence"), 10)
 plot(rules.kaisenkm, method = "graph")
 
+### support items: what they purchase before [SL] 3pc Salmon - lhs
+
+rules.3pcsal<- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="lhs",rhs="[SL] 3pc Salmon"), 
+                       control = list (verbose=F)) 
+
+rules.3pcsal <- head(sort(rules.3pcsal, by="confidence"), 20)
+plot(rules.3pcsal, method = "graph")
+
+### support items: what they purchase after [SL]Seafood Mix KM- rhs > Add KM Soup significant only
+
+### support items: what they purchase after Shokado Bento rhs 
+
+rules.shokado <- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="rhs",lhs="Shokado Bento"), 
+                       control = list (verbose=F)) 
+
+rules.shokado <- head(sort(rules.shokado, by="confidence"), 20)
+plot(rules.shokado, method = "graph")
+
+### support items: what they purchase after Kids Sushi Udon Meal rhs 
+
+rules.kids <- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="rhs",lhs="Kids Sushi Udon Meal"), 
+                       control = list (verbose=F)) 
+
+rules.kids <- head(sort(rules.kids, by="confidence"), 30)
+plot(rules.kids, method = "graph", engine = "interactive")
+	
+### support items: what they purchase after Red Wine rhs 
+
+rules.red <- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="rhs",lhs="Red Wine"), 
+                       control = list (verbose=F)) 
+
+rules.red <- head(sort(rules.red, by="confidence"), 30)
+plot(rules.red, method = "graph")
+	
+### support items: what they purchase after Premium Malts 380ml rhs 
+
+rules.beer<- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="lhs",rhs="Premium Malts 380ml"), 
+                       control = list (verbose=F)) 
+
+rules.beer <- head(sort(rules.beer, by="confidence"), 30)
+plot(rules.beer, method = "graph")
+	
+### support items: what they purchase before Premium Malts 380ml lhs 
+
+rules.beer<- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="rhs",lhs="Premium Malts 380ml"), 
+                       control = list (verbose=F)) 
+
+rules.beer <- head(sort(rules.beer, by="confidence"), 30)
+plot(rules.beer, method = "graph")
+
+
+### support items: what they purchase after Hotate Salmon Teri Kamameshi rhs 
+
+rules.hotkm <- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="lhs",rhs="Hotate Salmon Teri Kamameshi"), 
+                       control = list (verbose=F)) 
+
+rules.hotkm <- head(sort(rules.hotkm, by="confidence"), 20)
+plot(rules.hotkm, method = "graph")
+	
+### support items: what they purchase after [4pc]Sp Aburi Salmon Roll rhs 
+
+rules.4pc <- apriori (data=Agg.RTxn_DD, 
+                       parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
+                       appearance = list (default="lhs",rhs="[4pc]Sp Aburi Salmon Roll"), 
+                       control = list (verbose=F)) 
+
+rules.4pc <- head(sort(rules.4pc, by="confidence"), 20)
+plot(rules.4pc, method = "graph")
+	
+
+
+
 ##-------------------------------------------
 ### support items: get rules that lead to buying 'SUN Tofu Cheesecake'
 
@@ -250,25 +335,26 @@ rules.edamame <- apriori (data=Agg.RTxn_DD,
 rules.edamame1 <- head(sort(rules.edamame, by="support"), 20)
 plot(rules.edamame1, method = "graph")
 
-### support items: get rules that lead to buying 'Premium Malts 380ml'
 
-rules.beer <- apriori (data=Agg.RTxn_DD, 
-                          parameter=list (supp=0.001,conf = 0.01, minlen = 2), 
-                          appearance = list (default="rhs",lhs="Premium Malts 380ml"), 
-                          control = list (verbose=F)) 
+### support items: get rules that lead to buying 'Kubota Manju'
 
-rules.beer1 <- head(sort(rules.beer, by="support"), 20)
-plot(rules.beer1, method = "graph")
+rules.yama <- apriori (data=Agg.RTxn_DD, 
+                         parameter=list (supp=0.0001,conf = 0.0001, minlen = 2), 
+                         appearance = list (default="rhs",lhs="San Sui Getsu 720ml"), 
+                         control = list (verbose=F)) 
 
-### support items: get rules that lead to buying 'Hamachi Kama Yaki'
+rules.yama <- head(sort(rules.yama, by="support"), 10)
+plot(rules.yama, method = "graph")
 
-rules.hama <- apriori (data=Agg.RTxn_DD, 
-                       parameter=list (supp=0.001,conf = 0.05, minlen = 2), 
-                       appearance = list (default="lhs",rhs="Hamachi Kama Yaki"), 
-                       control = list (verbose=F)) 
 
-rules.hama1 <- head(sort(rules.hama, by="support"), 20)
-plot(rules.hama1, method = "graph")
+### support items: get rules that lead to buying 'Kubota Manju'
 
+rules.kub <- apriori (data=Agg.RTxn_DD, 
+                         parameter=list (supp=0.0001,conf = 0.0001, minlen = 2), 
+                         appearance = list (default="rhs",lhs="Momokawa Junmai 720ml"), 
+                         control = list (verbose=F)) 
+
+rules.kub <- head(sort(rules.kub, by="support"), 10)
+plot(rules.kub, method = "graph")
 
 ````
